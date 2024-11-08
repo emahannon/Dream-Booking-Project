@@ -1,0 +1,21 @@
+.center{
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /*padding:5em*/
+}
+
+.main{
+    padding-left: .5rem;
+    padding-right: .5rem;
+}
+
+.content{
+    padding-right: 2em;
+    padding-left: 2em;
+}
+
+.heading{
+    text-align: center;
+}
