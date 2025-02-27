@@ -1,0 +1,11 @@
+stages:
+  - setup
+  - test
+  - linting
+  - code_quality
+  - sonar_analysis
+  - .post
+
+include:
+  - local: 'ci/pipelineback.yml'
+  - local: 'ci/pipelinequality.yml'

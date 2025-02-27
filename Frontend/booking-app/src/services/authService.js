@@ -1,4 +1,3 @@
-// Not sure if this code will work it's from chatgpt
 
 // API calls for login and signup????
 export const loginUser = (email, password) => {

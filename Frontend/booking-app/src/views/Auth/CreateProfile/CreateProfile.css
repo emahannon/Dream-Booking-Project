@@ -1,0 +1,18 @@
+.center-box{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.heading{
+    text-align: center;
+    padding-left: .5em;
+    padding-right: .5em;
+}
+
+.boxes-box{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

@@ -1,2 +1,15 @@
 node_modules/
 .idea/
+Backend/main_management/compose.yaml
+Backend/rating_system/hs_err_pid26028.log
+Backend/rating_system/hs_err_pid22888.log
+Backend/rating_system/hs_err_pid4180.log
+Backend/rating_system/hs_err_pid6120.log
+Backend/rating_system/hs_err_pid6572.log
+Backend/rating_system/hs_err_pid9144.log
+Backend/rating_system/hs_err_pid9416.log
+Backend/rating_system/replay_pid6572.log
+Backend/rating_system/replay_pid9416.log
+Backend/rating_system/hs_err_pid11052.log
+Backend/rating_system/hs_err_pid11524.log
+Backend/rating_system/replay_pid11052.log

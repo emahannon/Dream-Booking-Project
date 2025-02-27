@@ -1,0 +1,73 @@
+
+services:
+  # PostgreSQL service
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      POSTGRES_DB: booking
+      POSTGRES_PASSWORD: qwerty123
+      POSTGRES_USER: team
+    ports:
+      - '62588:5432'
+
+  postgres_test:
+    image: 'postgres:latest'
+    environment:
+      POSTGRES_DB: booking_test
+      POSTGRES_USER: team
+      POSTGRES_PASSWORD: qwerty123
+    ports:
+      - '51953:5432'
+
+
+  # Redis service
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+
+  # MongoDB service
+  mongodb:
+    image: 'mongo:latest'
+    container_name: mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=reviewPhotoService
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+
+  mongodb_test:
+    image: 'mongo:latest'
+    container_name: mongodb_test
+    environment:
+      - MONGO_INITDB_DATABASE=test_db
+    ports:
+      - '51503:27017'
+    volumes:
+      - mongodb_data_test:/data/db
+
+  # RabbitMQ service
+  rabbitmq:
+    image: 'rabbitmq:management'
+    container_name: rabbitmq
+    ports:
+      - '15672:15672'
+      - '5672:5672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: 12345
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+
+volumes:
+  redis_data:
+  mongodb_data:
+  rabbitmq_data:
+  mongodb_data_test:
+
+

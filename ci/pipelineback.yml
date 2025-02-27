@@ -1,0 +1,120 @@
+stages:
+  - setup
+  - test
+  - sonar_analysis
+
+variables:
+  POSTGRES_PASSWORD: qwerty123
+  POSTGRES_DB: booking_test
+  POSTGRES_USER: team
+  POSTGRES_HOST: postgres
+  FLYWAY_USER: team
+  FLYWAY_PASSWORD: qwerty123
+  FLYWAY_URL: jdbc:postgresql://postgres:5432/booking_test
+  RABBITMQ_DEFAULT_USER: guest
+  RABBITMQ_DEFAULT_PASS: guest
+  RABBITMQ_HOST: rabbitmq
+  MONGO_INITDB_DATABASE: test_db
+  MONGO_HOST: mongo
+
+# Setup stage: Create PostgreSQL, RabbitMQ, and MongoDB containers
+postgres_rabbitmq_mongo_test:
+  image: 'postgres:latest'
+  stage: setup
+  services:
+    - name: 'postgres:latest'
+      alias: postgres
+    - name: 'rabbitmq:management'
+      alias: rabbitmq
+    - name: 'mongo:4.4'
+      alias: mongo
+  script:
+    - apt-get update && apt-get install -y curl
+    - echo "Setting up PostgreSQL, RabbitMQ, and MongoDB containers"
+    - export PGPASSWORD=$POSTGRES_PASSWORD
+    - psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT 1"  # Check DB connection
+    - echo "Checking RabbitMQ connection"
+    - curl -s --head --request GET http://rabbitmq:15672/  # Check RabbitMQ management console
+    - echo "Checking MongoDB connection"
+    - curl -s --head --request GET http://mongo:27017/  # Check MongoDB connection
+
+# Test stage: Run Maven tests with MongoDB, PostgreSQL, RabbitMQ, and Docker-in-Docker
+maven_tests:
+  image: maven:3.8.3-openjdk-17
+  stage: test
+  services:
+    - name: 'postgres:latest'
+      alias: postgres
+    - name: 'rabbitmq:management'
+      alias: rabbitmq
+    - name: 'mongo:4.4'
+      alias: mongo
+  before_script:
+    - echo "Setting up environment variables for Postgres, RabbitMQ, MongoDB, and Docker"
+    - export SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/booking_test
+    - export SPRING_DATASOURCE_USERNAME=team
+    - export SPRING_DATASOURCE_PASSWORD=$POSTGRES_PASSWORD
+    - export SPRING_FLYWAY_URL=jdbc:postgresql://postgres:5432/booking_test
+    - export SPRING_FLYWAY_USER=team
+    - export SPRING_FLYWAY_PASSWORD=$POSTGRES_PASSWORD
+    - export SPRING_RABBITMQ_HOST=rabbitmq
+    - export SPRING_RABBITMQ_PORT=5672
+    - export SPRING_RABBITMQ_USERNAME=guest
+    - export SPRING_RABBITMQ_PASSWORD=guest
+    - export SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/test_db
+
+  script:
+    - echo "Running Maven tests"
+    - mvn clean test jacoco:report -f Backend/rating_system/pom.xml -X
+    - mvn clean test jacoco:report -f Backend/main_management/pom.xml -X
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - Backend/rating_system/target/surefire-reports/*.xml
+        - Backend/main_management/target/surefire-reports/*.xml
+      coverage_report:
+        coverage_format: jacoco
+        path: Backend/rating_system/target/site/jacoco/jacoco.xml
+    paths:
+      - Backend/rating_system/target/surefire-reports/
+      - Backend/main_management/target/surefire-reports/
+      - Backend/rating_system/target/site/jacoco/
+      - Backend/main_management/target/site/jacoco/
+    expire_in: 7 days  # Keep reports for 7 days
+
+sonar_analysis:
+  image: maven:3.8.3-openjdk-17
+  stage: sonar_analysis
+  services:
+    - name: 'postgres:latest'
+      alias: postgres
+    - name: 'rabbitmq:management'
+      alias: rabbitmq
+    - name: 'mongo:4.4'
+      alias: mongo
+  before_script:
+    - echo "Setting up environment variables for Postgres, RabbitMQ, MongoDB, and Docker"
+    - export SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/booking_test
+    - export SPRING_DATASOURCE_USERNAME=team
+    - export SPRING_DATASOURCE_PASSWORD=$POSTGRES_PASSWORD
+    - export SPRING_FLYWAY_URL=jdbc:postgresql://postgres:5432/booking_test
+    - export SPRING_FLYWAY_USER=team
+    - export SPRING_FLYWAY_PASSWORD=$POSTGRES_PASSWORD
+    - export SPRING_RABBITMQ_HOST=rabbitmq
+    - export SPRING_RABBITMQ_PORT=5672
+    - export SPRING_RABBITMQ_USERNAME=guest
+    - export SPRING_RABBITMQ_PASSWORD=guest
+    - export SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/test_db
+  script:
+      - cd Backend/rating_system
+      - mvn clean install
+      - mvn sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_TOKEN" || echo "SonarQube failed, continuing pipeline..."
+
+      - cd ../../Backend/main_management
+      - mvn clean install -B
+      - mvn sonar:sonar -Dsonar.qualitygate.wait=true -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_TOKEN" || echo "SonarQube failed, continuing pipeline..."
+  dependencies:
+    - maven_tests
+
+

@@ -1,0 +1,64 @@
+stages:
+  - linting
+  - code_quality
+  - sonar_analysis
+
+
+checkstyle_rating_system:
+  stage: linting
+  image: maven:latest
+  script:
+    - cd Backend/rating_system
+    - mvn checkstyle:checkstyle
+  artifacts:
+    paths:
+      - Backend/rating_system/target/checkstyle-result.xml
+    expire_in: 1 week
+  only:
+    - main
+
+
+checkstyle_main_management:
+  stage: linting
+  image: maven:latest
+  script:
+    - cd Backend/main_management
+    - mvn checkstyle:checkstyle
+  artifacts:
+    paths:
+      - Backend/main_management/target/checkstyle-result.xml
+    expire_in: 1 week
+  only:
+    - main
+
+
+eslint:
+  stage: linting
+  image: node:20
+  before_script:
+    - cd Frontend/booking-app || exit 1
+    - npm install eslint --save-dev
+    - npm install
+  script:
+    - npx eslint . --format json --output-file eslint-report.json || true
+    - ls -l
+  artifacts:
+    reports:
+      codequality: Frontend/booking-app/eslint-report.json
+    paths:
+      - Frontend/booking-app/eslint-report.json
+    expire_in: 1 week
+  only:
+    - main
+
+sonarqube_scan_frontend:
+  stage: sonar_analysis
+  image: node:18
+  variables:
+    SONAR_SCANNER_OPTS: "-Dsonar.projectKey=jafargur_DreamBookingSystem_9b0e1381-d11b-4bfc-be87-acfddc556b3c"
+  script:
+    - cd Frontend/booking-app
+    - npm install -g sonarqube-scanner
+    - sonar-scanner -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_TOKEN"
+  only:
+    - main
